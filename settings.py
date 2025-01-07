@@ -1,1 +1,0 @@
-ALLOWED_HOST = ['localhost','https://web-production-9866.up.railway.app/']
