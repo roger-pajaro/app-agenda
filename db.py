@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-DATABASE_URI = "postgresql://postgres:admin@localhost:5432/agenda"
+DATABASE_URI = "postgresql://agendadb:iftpt8WFitmuUjXTjRy534bn4wPueGwJ@dpg-ctust3lds78s738k7vig-a.oregon-postgres.render.com/agenda"
 
 
 def conectar():
