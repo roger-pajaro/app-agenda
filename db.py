@@ -11,9 +11,13 @@ def conectar():
     try:
         # Intentar establecer una conexión realizando una operación simple
         session = Session()
-        session.execute('SELECT 1')  # Simple query to check connection
+        session.execute('SELECT 1')  # Consulta simple para verificar la conexión
         print("Conexión a base de datos OK")
         return session
     except OperationalError as e:
         print(f"Error en conexión a base de datos: {e}")
         return None
+    finally:
+        # Cerrar la sesión si se estableció correctamente
+        if 'session' in locals():
+            session.close()

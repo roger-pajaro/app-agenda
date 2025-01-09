@@ -1,8 +1,7 @@
 from db import conectar
 from models import Contacto, Pertenece
 
-
-def seleccionar_contactos(id_usuario,campo,orden):
+def seleccionar_contactos(id_usuario, campo, orden):
     try:
         session = conectar()
         
@@ -15,7 +14,7 @@ def seleccionar_contactos(id_usuario,campo,orden):
         elif campo == "NOMBRE" and orden == "DESC": 
             contactos = session.query(Contacto).join(Pertenece, Contacto.id == Pertenece.id_contacto).filter(Pertenece.id_usuario == id_usuario).order_by(Contacto.nombre.desc()).all()
     except Exception as e:
-        print(e)
+        print(f"Error al seleccionar contactos: {e}")
     finally:
         session.close()
         
@@ -24,33 +23,38 @@ def seleccionar_contactos(id_usuario,campo,orden):
 def seleccionar_contacto(id):
     try:
         session = conectar()
-        contacto = session.query(Contacto).filter(Contacto.id == id).all()[0]
+        contacto = session.query(Contacto).filter(Contacto.id == id).all()
+        if contacto:
+            return contacto[0]
+        return None
     except Exception as e:
-        print(e)
+        print(f"Error al seleccionar contacto: {e}")
     finally:
         session.close()
-    return contacto
+    return None
 
-
-def busqueda_contactos(id_usuario,value):
+def busqueda_contactos(id_usuario, value):
     try:
         session = conectar()
-        contactos = session.query(Contacto).join(Pertenece, Contacto.id == Pertenece.id_contacto ).filter(Pertenece.id_usuario == id_usuario).filter((Contacto.nombre.ilike('%'+value+'%')) | (Contacto.apellidos.ilike('%'+value+'%')) | (Contacto.nombre.ilike('%'+value+'%')) | (Contacto.email.ilike('%'+value+'%'))).order_by(Contacto.nombre).all()
+        contactos = session.query(Contacto).join(Pertenece, Contacto.id == Pertenece.id_contacto).filter(Pertenece.id_usuario == id_usuario).filter(
+            (Contacto.nombre.ilike('%' + value + '%')) |
+            (Contacto.apellidos.ilike('%' + value + '%')) |
+            (Contacto.email.ilike('%' + value + '%'))
+        ).order_by(Contacto.nombre).all()
     except Exception as e:
-        print(e)
+        print(f"Error al buscar contactos: {e}")
     finally:
         session.close()   
     return contactos     
 
-
-def insertar_contacto(id_usuario,nombre,apellidos,direccion,email,telefono):
+def insertar_contacto(id_usuario, nombre, apellidos, direccion, email, telefono):
     try:
         contacto = Contacto(
-            nombre = nombre,
-            apellidos = apellidos,
-            direccion = direccion,
-            email = email,
-            telefono = telefono
+            nombre=nombre,
+            apellidos=apellidos,
+            direccion=direccion,
+            email=email,
+            telefono=telefono
         )
         session = conectar()
         session.add(contacto)
@@ -60,54 +64,56 @@ def insertar_contacto(id_usuario,nombre,apellidos,direccion,email,telefono):
         id_contacto = contacto.id
         
         pertenece = Pertenece(
-            id_usuario = id_usuario,
-            id_contacto = id_contacto
+            id_usuario=id_usuario,
+            id_contacto=id_contacto
         )
         
         session.add(pertenece)
-        session.commit
+        session.commit()  # Faltaba este commit para la tabla Pertenece
     except Exception as e:
-        print(e)
+        print(f"Error al insertar contacto: {e}")
         return False
     finally:
         session.close()
         return True
     
-    
-def actualizar_contacto(id,nombre,apellidos,direccion,email,telefono):
+def actualizar_contacto(id, nombre, apellidos, direccion, email, telefono):
     try:
         session = conectar()
         contacto = session.query(Contacto).get(id)
-        contacto.nombre = nombre
-        contacto.apellidos = apellidos
-        contacto.direccion = direccion
-        contacto.email = email
-        contacto.telefono = telefono
-        
-        session.add(contacto)
-        session.commit()
-        
+        if contacto:
+            contacto.nombre = nombre
+            contacto.apellidos = apellidos
+            contacto.direccion = direccion
+            contacto.email = email
+            contacto.telefono = telefono
+
+            session.add(contacto)
+            session.commit()
+        else:
+            print(f"Contacto con ID {id} no encontrado.")
+            return False
     except Exception as e:
-        print(e)
+        print(f"Error al actualizar contacto: {e}")
         return False
     finally:
         session.close()
         return True
-    
 
-def eliminar_contacto(id_usuario,id_contacto):
+def eliminar_contacto(id_usuario, id_contacto):
     try:
         session = conectar()
         session.query(Pertenece).filter(Pertenece.id_contacto == id_contacto).filter(Pertenece.id_usuario == id_usuario).delete()
         contacto = session.query(Contacto).get(id_contacto)
-        session.delete(contacto)
-        session.commit()
-        
+        if contacto:
+            session.delete(contacto)
+            session.commit()
+        else:
+            print(f"Contacto con ID {id_contacto} no encontrado.")
+            return False
     except Exception as e:
-        print(e)
+        print(f"Error al eliminar contacto: {e}")
         return False
     finally:
         session.close()
         return True
-        
-        
