@@ -1,141 +1,113 @@
 from db import conectar
 from models import Contacto, Pertenece
 
-def seleccionar_contactos(id_usuario, campo, orden):
-    if not id_usuario or not isinstance(id_usuario, int):
-        raise ValueError("El parámetro id_usuario debe ser un número entero válido")
 
-    contactos = []
+def seleccionar_contactos(id_usuario,campo,orden):
     try:
         session = conectar()
-        query = session.query(Contacto).join(Pertenece, Contacto.id == Pertenece.id_contacto).filter(Pertenece.id_usuario == id_usuario)
-
+        
         if campo == "ID" and orden == "ASC":
-            contactos = query.order_by(Contacto.id).all()
+            contactos = session.query(Contacto).join(Pertenece, Contacto.id == Pertenece.id_contacto).filter(Pertenece.id_usuario == id_usuario).order_by(Contacto.id).all()
         elif campo == "ID" and orden == "DESC":
-            contactos = query.order_by(Contacto.id.desc()).all()
-        elif campo == "NOMBRE" and orden == "ASC":
-            contactos = query.order_by(Contacto.nombre).all()
-        elif campo == "NOMBRE" and orden == "DESC":
-            contactos = query.order_by(Contacto.nombre.desc()).all()
+            contactos = session.query(Contacto).join(Pertenece, Contacto.id == Pertenece.id_contacto).filter(Pertenece.id_usuario == id_usuario).order_by(Contacto.id.desc()).all()
+        elif campo == "NOMBRE" and orden == "ASC": 
+            contactos = session.query(Contacto).join(Pertenece, Contacto.id == Pertenece.id_contacto).filter(Pertenece.id_usuario == id_usuario).order_by(Contacto.nombre).all()
+        elif campo == "NOMBRE" and orden == "DESC": 
+            contactos = session.query(Contacto).join(Pertenece, Contacto.id == Pertenece.id_contacto).filter(Pertenece.id_usuario == id_usuario).order_by(Contacto.nombre.desc()).all()
     except Exception as e:
-        print(f"Error al seleccionar contactos: {e}")
+        print(e)
     finally:
         session.close()
+        
     return contactos
 
 def seleccionar_contacto(id):
-    if not id or not isinstance(id, int):
-        raise ValueError("El parámetro id debe ser un número entero válido")
     try:
         session = conectar()
-        contacto = session.query(Contacto).filter(Contacto.id == id).first()
-        if not contacto:
-            raise ValueError(f"No se encontró contacto con id {id}")
+        contacto = session.query(Contacto).filter(Contacto.id == id).all()[0]
     except Exception as e:
-        print(f"Error al seleccionar contacto: {e}")
-        return None
+        print(e)
     finally:
         session.close()
     return contacto
 
-def busqueda_contactos(id_usuario, value):
-    if not id_usuario or not isinstance(id_usuario, int):
-        raise ValueError("El parámetro id_usuario debe ser un número entero válido")
 
-    contactos = []
+def busqueda_contactos(id_usuario,value):
     try:
         session = conectar()
-        contactos = session.query(Contacto).join(Pertenece, Contacto.id == Pertenece.id_contacto).filter(
-            Pertenece.id_usuario == id_usuario,
-            (Contacto.nombre.ilike(f'%{value}%')) | 
-            (Contacto.apellidos.ilike(f'%{value}%')) | 
-            (Contacto.email.ilike(f'%{value}%'))
-        ).order_by(Contacto.nombre).all()
+        contactos = session.query(Contacto).join(Pertenece, Contacto.id == Pertenece.id_contacto ).filter(Pertenece.id_usuario == id_usuario).filter((Contacto.nombre.ilike('%'+value+'%')) | (Contacto.apellidos.ilike('%'+value+'%')) | (Contacto.nombre.ilike('%'+value+'%')) | (Contacto.email.ilike('%'+value+'%'))).order_by(Contacto.nombre).all()
     except Exception as e:
-        print(f"Error en la búsqueda de contactos: {e}")
+        print(e)
     finally:
-        session.close()
-    return contactos
+        session.close()   
+    return contactos     
 
-def insertar_contacto(id_usuario, nombre, apellidos, direccion, email, telefono):
-    if not id_usuario or not isinstance(id_usuario, int):
-        raise ValueError("El parámetro id_usuario debe ser un número entero válido")
 
+def insertar_contacto(id_usuario,nombre,apellidos,direccion,email,telefono):
     try:
         contacto = Contacto(
-            nombre=nombre,
-            apellidos=apellidos,
-            direccion=direccion,
-            email=email,
-            telefono=telefono
+            nombre = nombre,
+            apellidos = apellidos,
+            direccion = direccion,
+            email = email,
+            telefono = telefono
         )
         session = conectar()
         session.add(contacto)
         session.commit()
-
+        
         session.refresh(contacto)
         id_contacto = contacto.id
-
+        
         pertenece = Pertenece(
-            id_usuario=id_usuario,
-            id_contacto=id_contacto
+            id_usuario = id_usuario,
+            id_contacto = id_contacto
         )
-
+        
         session.add(pertenece)
         session.commit()
     except Exception as e:
-        print(f"Error al insertar contacto: {e}")
+        print(e)
         return False
     finally:
         session.close()
-    return True
-
-def actualizar_contacto(id, nombre, apellidos, direccion, email, telefono):
-    if not id or not isinstance(id, int):
-        raise ValueError("El parámetro id debe ser un número entero válido")
-
+        return True
+    
+    
+def actualizar_contacto(id,nombre,apellidos,direccion,email,telefono):
     try:
         session = conectar()
         contacto = session.query(Contacto).get(id)
-        if not contacto:
-            raise ValueError(f"No se encontró contacto con id {id}")
-
         contacto.nombre = nombre
         contacto.apellidos = apellidos
         contacto.direccion = direccion
         contacto.email = email
         contacto.telefono = telefono
-
+        
         session.add(contacto)
         session.commit()
+        
     except Exception as e:
-        print(f"Error al actualizar contacto: {e}")
+        print(e)
         return False
     finally:
         session.close()
-    return True
+        return True
+    
 
-def eliminar_contacto(id_usuario, id_contacto):
-    if not id_usuario or not isinstance(id_usuario, int):
-        raise ValueError("El parámetro id_usuario debe ser un número entero válido")
-    if not id_contacto or not isinstance(id_contacto, int):
-        raise ValueError("El parámetro id_contacto debe ser un número entero válido")
-
+def eliminar_contacto(id_usuario,id_contacto):
     try:
         session = conectar()
-        session.query(Pertenece).filter(
-            Pertenece.id_contacto == id_contacto,
-            Pertenece.id_usuario == id_usuario
-        ).delete()
-
+        session.query(Pertenece).filter(Pertenece.id_contacto == id_contacto).filter(Pertenece.id_usuario == id_usuario).delete()
         contacto = session.query(Contacto).get(id_contacto)
-        if contacto:
-            session.delete(contacto)
-            session.commit()
+        session.delete(contacto)
+        session.commit()
+        
     except Exception as e:
-        print(f"Error al eliminar contacto: {e}")
+        print(e)
         return False
     finally:
         session.close()
-    return True
+        return True
+        
+        
